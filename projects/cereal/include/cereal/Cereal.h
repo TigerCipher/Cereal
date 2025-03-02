@@ -23,104 +23,18 @@
 
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <array>
-#include <sstream>
+#include "Serializer.h"
+#include "Json.h"
 
 namespace cereal
 {
-
-template<typename T>
-std::string SerializeItem(const T& obj);
-
-std::string SerializeObject(const std::unordered_map<std::string_view, std::string>& jsonMap);
-
-
-template<typename T>
-std::string SerializeItem(const T& obj)
-{
-    std::ostringstream oss;
-    oss << obj;
-    return oss.str();
-}
-
-template<>
-inline std::string SerializeItem<std::string>(const std::string& obj)
-{
-    return "\"" + obj + "\"";
-}
-
-template<>
-inline std::string SerializeItem<bool>(const bool& obj)
-{
-    return obj ? "true" : "false";
-}
-
 
 class Serializable
 {
 public:
     virtual ~Serializable() = default;
 
-    [[nodiscard]] virtual std::unordered_map<std::string_view, std::string> ToJson() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<JsonObject> Serialize() const = 0;
 };
-
-
-template<typename T>
-std::string SerializeItem(const std::string_view key, const T& value)
-{
-    const std::string jsonValue = SerializeItem(value);
-    return "\"" + std::string(key) + "\": " + jsonValue;
-}
-
-
-template<typename T>
-std::string Serialize(const T& obj)
-{
-    if constexpr (std::is_base_of_v<Serializable, T>)
-    {
-        return cereal::SerializeObject(obj.ToJson());
-    } else
-    {
-        return cereal::SerializeItem(obj);
-    }
-}
-
-
-template<typename T, size_t N>
-std::string SerializeArray(const std::array<T, N> arr)
-{
-    std::ostringstream oss;
-    oss << "[";
-    for (size_t i = 0; i < N; ++i)
-    {
-        oss << cereal::Serialize(arr[i]);
-        if (i != N - 1)
-        {
-            oss << ", ";
-        }
-    }
-    oss << "]";
-    return oss.str();
-}
-
-template<typename T>
-std::string SerializeVector(const std::vector<T>& vec)
-{
-    std::ostringstream oss;
-    oss << "[";
-    for (size_t i = 0; i < vec.size(); ++i)
-    {
-        oss << cereal::Serialize(vec[i]);
-        if (i != vec.size() - 1)
-        {
-            oss << ", ";
-        }
-    }
-    oss << "]";
-    return oss.str();
-}
 
 } // namespace cereal
