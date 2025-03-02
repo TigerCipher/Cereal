@@ -25,15 +25,21 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <array>
+#include <sstream>
 
 namespace cereal
 {
 
 template<typename T>
-std::string Serialize(const T& obj);
+std::string SerializeItem(const T& obj);
+
+std::string SerializeObject(const std::unordered_map<std::string_view, std::string>& jsonMap);
+
 
 template<typename T>
-std::string Serialize(const T& obj)
+std::string SerializeItem(const T& obj)
 {
     std::ostringstream oss;
     oss << obj;
@@ -41,55 +47,86 @@ std::string Serialize(const T& obj)
 }
 
 template<>
-inline std::string Serialize<std::string>(const std::string& obj)
+inline std::string SerializeItem<std::string>(const std::string& obj)
 {
     return "\"" + obj + "\"";
 }
 
 template<>
-inline std::string Serialize<bool>(const bool& obj)
+inline std::string SerializeItem<bool>(const bool& obj)
 {
     return obj ? "true" : "false";
 }
 
 template<>
-inline std::string Serialize<int>(const int& obj)
+inline std::string SerializeItem<int>(const int& obj)
 {
     return std::to_string(obj);
 }
+
 
 class Serializable
 {
 public:
     virtual ~Serializable() = default;
 
-    [[nodiscard]] virtual std::string Serialize() const = 0;
+    [[nodiscard]] virtual std::unordered_map<std::string_view, std::string> ToJson() const = 0;
 };
 
-namespace detail
+
+template<typename T>
+std::string SerializeItem(const std::string_view key, const T& value)
 {
+    const std::string jsonValue = SerializeItem(value);
+    return "\"" + std::string(key) + "\": " + jsonValue;
+}
+
+
 template<typename T>
 std::string Serialize(const T& obj)
 {
     if constexpr (std::is_base_of_v<Serializable, T>)
     {
-        return obj.Serialize();
+        return cereal::SerializeObject(obj.ToJson());
     } else
     {
-        return cereal::Serialize(obj);
+        return cereal::SerializeItem(obj);
     }
 }
-} // namespace detail
 
 
-template<typename T>
-std::string Serialize(const std::string_view key, const T& value)
+template<typename T, size_t N>
+std::string SerializeArray(const std::array<T, N> arr)
 {
-    const std::string jsonValue = Serialize(value);
-    return "\"" + std::string(key) + "\": " + jsonValue;
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < N; ++i)
+    {
+        oss << cereal::Serialize(arr[i]);
+        if (i != N - 1)
+        {
+            oss << ", ";
+        }
+    }
+    oss << "]";
+    return oss.str();
 }
 
-
-std::string SerializeJson(const std::unordered_map<std::string_view, std::string>& jsonMap);
+template<typename T>
+std::string SerializeVector(const std::vector<T>& vec)
+{
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        oss << cereal::Serialize(vec[i]);
+        if (i != vec.size() - 1)
+        {
+            oss << ", ";
+        }
+    }
+    oss << "]";
+    return oss.str();
+}
 
 } // namespace cereal

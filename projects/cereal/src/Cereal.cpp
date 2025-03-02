@@ -4,7 +4,7 @@
 namespace cereal
 {
 
-std::string SerializeJson(const std::unordered_map<std::string_view, std::string>& jsonMap)
+std::string SerializeObject(const std::unordered_map<std::string_view, std::string>& jsonMap)
 {
     std::ostringstream oss;
     oss << "{";
