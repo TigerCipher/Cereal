@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 namespace cereal
 {
@@ -88,5 +89,7 @@ std::string Serialize(const std::string_view key, const T& value)
     return "\"" + std::string(key) + "\": " + jsonValue;
 }
 
+
+std::string SerializeJson(const std::unordered_map<std::string_view, std::string>& jsonMap);
 
 } // namespace cereal

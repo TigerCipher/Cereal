@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 template<>
@@ -27,11 +28,14 @@ int main()
     bool             flag  = true;
     std::vector<int> nums  = { 1, 2, 3, 4, 5 };
 
-    std::string appleStr = cereal::Serialize("fruit", apple);
-    std::string flagStr  = cereal::Serialize("flag", flag);
-    std::string numsStr  = cereal::Serialize("array", nums);
+    std::unordered_map<std::string_view, std::string> jsonMap;
 
-    std::cout << appleStr << std::endl;
-    std::cout << flagStr << std::endl;
-    std::cout << numsStr << std::endl;
+    jsonMap["fruit"] = cereal::Serialize(apple);
+    jsonMap["flag"]  = cereal::Serialize(flag);
+    jsonMap["array"] = cereal::Serialize(nums);
+
+    std::string jsonStr = cereal::SerializeJson(jsonMap);
+
+    std::cout << jsonStr << std::endl;
+
 }
