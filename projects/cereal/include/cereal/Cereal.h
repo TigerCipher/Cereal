@@ -24,7 +24,6 @@
 #pragma once
 
 #include <string>
-#include <format>
 
 namespace cereal
 {
@@ -35,13 +34,15 @@ std::string Serialize(const T& obj);
 template<typename T>
 std::string Serialize(const T& obj)
 {
-    return std::format("{}", obj);
+    std::ostringstream oss;
+    oss << obj;
+    return oss.str();
 }
 
 template<>
 inline std::string Serialize<std::string>(const std::string& obj)
 {
-    return std::format("\"{}\"", obj);
+    return "\"" + obj + "\"";
 }
 
 template<>
@@ -50,4 +51,42 @@ inline std::string Serialize<bool>(const bool& obj)
     return obj ? "true" : "false";
 }
 
+template<>
+inline std::string Serialize<int>(const int& obj)
+{
+    return std::to_string(obj);
 }
+
+class Serializable
+{
+public:
+    virtual ~Serializable() = default;
+
+    [[nodiscard]] virtual std::string Serialize() const = 0;
+};
+
+namespace detail
+{
+template<typename T>
+std::string Serialize(const T& obj)
+{
+    if constexpr (std::is_base_of_v<Serializable, T>)
+    {
+        return obj.Serialize();
+    } else
+    {
+        return cereal::Serialize(obj);
+    }
+}
+} // namespace detail
+
+
+template<typename T>
+std::string Serialize(const std::string_view key, const T& value)
+{
+    const std::string jsonValue = Serialize(value);
+    return "\"" + std::string(key) + "\": " + jsonValue;
+}
+
+
+} // namespace cereal
