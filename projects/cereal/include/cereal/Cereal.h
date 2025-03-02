@@ -58,12 +58,6 @@ inline std::string SerializeItem<bool>(const bool& obj)
     return obj ? "true" : "false";
 }
 
-template<>
-inline std::string SerializeItem<int>(const int& obj)
-{
-    return std::to_string(obj);
-}
-
 
 class Serializable
 {
