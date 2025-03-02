@@ -28,101 +28,87 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include <variant>
+
+#define VEC_TYPE_HELPER(T) std::vector<T>
+#define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
+
+#define VEC_TYPES                                                                                                                \
+    VEC_TYPE_HELPER(int), VEC_TYPE_HELPER(bool), VEC_TYPE_HELPER(double), VEC_TYPE_HELPER(float), VEC_TYPE_HELPER(std::string),  \
+        VEC_TYPE_HELPER(std::shared_ptr<JsonObject>)
+
+#define MAP_TYPES                                                                                                                \
+    MAP_TYPE_HELPER(int), MAP_TYPE_HELPER(bool), MAP_TYPE_HELPER(double), MAP_TYPE_HELPER(float), MAP_TYPE_HELPER(std::string),  \
+        MAP_TYPE_HELPER(std::shared_ptr<JsonObject>)
+
+#define VARYING_TYPES int, bool, double, float, std::string, std::shared_ptr<JsonObject>
+
+#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES>
+
 
 namespace cereal
 {
 
-class JsonValue
+class JsonObject;
+
+template<>
+std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObject>& obj);
+
+class JsonObject
 {
 public:
-    virtual ~JsonValue() = default;
-    [[nodiscard]] virtual std::string ToString() const = 0;
+    using JsonValue = VARIANT;
+
+    JsonObject() = default;
+    explicit JsonObject(JsonValue value) : mValue(std::move(value)), mIsSingleValue(true) {}
+    JsonObject(const JsonObject&)            = default;
+    JsonObject& operator=(const JsonObject&) = default;
+
+    void Add(const std::string& key, JsonValue value);
+
+    [[nodiscard]] std::string ToString() const;
+
+    [[nodiscard]] const std::unordered_map<std::string, JsonValue>& GetValues() const { return mValues; }
+
+    JsonValue& operator[](const std::string& key) { return mValues[key]; }
+
+    template<typename T>
+    [[nodiscard]] const T& Get(const std::string& key) const
+    {
+        if (!mValues.contains(key))
+        {
+            throw std::runtime_error("Key not found in JsonObject");
+        }
+
+        return std::get<T>(mValues.at(key));
+    }
+
+    template<typename T>
+    [[nodiscard]] const std::vector<T>& GetVector(const std::string& key) const
+    {
+        return Get<std::vector<T>>(key);
+    }
+
+    [[nodiscard]] const std::shared_ptr<JsonObject>& GetObjectPtr(const std::string& key) const
+    {
+        return Get<std::shared_ptr<JsonObject>>(key);
+    }
+
+    [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
+
+private:
+    std::unordered_map<std::string, JsonValue> mValues;
+    JsonValue                                  mValue;
+    bool                                       mIsSingleValue;
 };
 
 template<>
-inline std::string Serialize<JsonValue>(const JsonValue& obj)
+inline std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObject>& obj)
 {
-    return obj.ToString();
+    return obj->ToString();
 }
 
-class JsonString : public JsonValue
-{
-public:
-    explicit JsonString(std::string value) : mValue(std::move(value)) {}
-    [[nodiscard]] std::string ToString() const override;
-
-    [[nodiscard]] constexpr const std::string& Get() const { return mValue; }
-
-private:
-    std::string mValue;
-};
-
-class JsonNumber : public JsonValue
-{
-public:
-    explicit JsonNumber(const double value) : mValue(value) {}
-    [[nodiscard]] std::string ToString() const override;
-
-    [[nodiscard]] constexpr double Get() const { return mValue; }
-
-private:
-    double mValue;
-};
-
-class JsonBool : public JsonValue
-{
-public:
-    explicit JsonBool(const bool value) : mValue(value) {}
-    [[nodiscard]] std::string ToString() const override;
-
-    [[nodiscard]] constexpr bool Get() const { return mValue; }
-
-private:
-    bool mValue;
-};
-
-class JsonNull : public JsonValue
-{
-public:
-    [[nodiscard]] std::string ToString() const override { return "null"; }
-};
-
-class JsonObject : public JsonValue
-{
-public:
-    JsonObject()                             = default;
-    JsonObject(const JsonObject&)            = delete;
-    JsonObject& operator=(const JsonObject&) = delete;
-
-    void Add(const std::string& key, std::unique_ptr<JsonValue> value);
-
-    [[nodiscard]] std::string ToString() const override;
-
-    [[nodiscard]] const std::unordered_map<std::string, std::unique_ptr<JsonValue>>& Get() const { return mValues; }
-
-    std::unique_ptr<JsonValue>& operator[](const std::string& key) { return mValues[key]; }
-
-private:
-    std::unordered_map<std::string, std::unique_ptr<JsonValue>> mValues;
-};
-
-class JsonArray : public JsonValue
-{
-public:
-    JsonArray()                            = default;
-    JsonArray(const JsonArray&)            = delete;
-    JsonArray& operator=(const JsonArray&) = delete;
-
-    void Add(std::unique_ptr<JsonValue> value);
-
-    [[nodiscard]] std::string ToString() const override;
-
-    [[nodiscard]] const std::vector<std::unique_ptr<JsonValue>>& Get() const { return mValues; }
-
-    std::unique_ptr<JsonValue>& operator[](const size_t index) { return mValues[index]; }
-
-private:
-    std::vector<std::unique_ptr<JsonValue>> mValues;
-};
+SERIALIZE_VECTOR_IMPL(std::shared_ptr<JsonObject>)
+SERIALIZE_MAP_IMPL(std::shared_ptr<JsonObject>)
 
 } // namespace cereal

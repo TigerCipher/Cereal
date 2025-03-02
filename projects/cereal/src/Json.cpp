@@ -28,71 +28,36 @@
 namespace cereal
 {
 
-std::string JsonString::ToString() const
+void JsonObject::Add(const std::string& key, JsonValue value)
 {
-    return Serialize(mValue);
-}
-
-std::string JsonNumber::ToString() const
-{
-    return Serialize(mValue);
-}
-
-std::string JsonBool::ToString() const
-{
-    return Serialize(mValue);
-}
-
-void JsonObject::Add(const std::string& key, std::unique_ptr<JsonValue> value)
-{
-    if (!value)
-    {
-        throw std::runtime_error("Failed to add value to JsonObject because value was null");
-    }
-    auto result = mValues.emplace(key, std::move(value));
-    if (!result.second)
-    {
-        throw std::runtime_error("Failed to add value to JsonObject");
-    }
+    mValues[key] = std::move(value);
 }
 
 std::string JsonObject::ToString() const
 {
     std::ostringstream oss;
+
+    if (mIsSingleValue)
+    {
+        oss << Serialize(mValue);
+        return oss.str();
+    }
+
     oss << "{";
     bool first = true;
+
     for (const auto& [key, value] : mValues)
     {
         if (!first)
         {
             oss << ", ";
         }
-        oss << "\"" << key << "\": " << value->ToString();
+        oss << "\"" << key << "\": ";
+        std::visit([&oss](const auto& v) { oss << Serialize(v); }, value);
         first = false;
     }
+
     oss << "}";
-    return oss.str();
-}
-
-void JsonArray::Add(std::unique_ptr<JsonValue> value)
-{
-    mValues.push_back(std::move(value));
-}
-
-std::string JsonArray::ToString() const
-{
-    std::ostringstream oss;
-    oss << "[";
-
-    for (size_t i = 0; i < mValues.size(); ++i)
-    {
-        oss << mValues[i]->ToString();
-        if (i != mValues.size() - 1)
-        {
-            oss << ", ";
-        }
-    }
-    oss << "]";
     return oss.str();
 }
 

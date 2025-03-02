@@ -28,6 +28,22 @@
 #include <array>
 #include <ostream>
 #include <sstream>
+#include <unordered_map>
+#include <variant>
+
+#define SERIALIZE_VECTOR_IMPL(T)                                                                                                 \
+    template<>                                                                                                                   \
+    inline std::string Serialize<std::vector<T>>(const std::vector<T>& obj)                                                      \
+    {                                                                                                                            \
+        return SerializeVector(obj);                                                                                             \
+    }
+
+#define SERIALIZE_MAP_IMPL(T)                                                                                                    \
+    template<>                                                                                                                   \
+    inline std::string Serialize<std::unordered_map<std::string, T>>(const std::unordered_map<std::string, T>& obj)              \
+    {                                                                                                                            \
+        return SerializeMap(obj);                                                                                                \
+    }
 
 namespace cereal
 {
@@ -93,5 +109,44 @@ std::string SerializeVector(const std::vector<T>& vec)
     oss << "]";
     return oss.str();
 }
+
+template<typename T>
+std::string SerializeMap(const std::unordered_map<std::string, T>& map)
+{
+    std::ostringstream oss;
+    oss << "{";
+    size_t i = 0;
+    for (const auto& [key, value] : map)
+    {
+        oss << cereal::Serialize(key, value);
+        if (i != map.size() - 1)
+        {
+            oss << ", ";
+        }
+        ++i;
+    }
+    oss << "}";
+    return oss.str();
+}
+
+template<typename... Ts>
+inline std::string Serialize(const std::variant<Ts...>& var)
+{
+    std::ostringstream oss;
+    std::visit([&oss](const auto& val) { oss << Serialize(val); }, var);
+    return oss.str();
+}
+
+SERIALIZE_VECTOR_IMPL(int)
+SERIALIZE_VECTOR_IMPL(bool)
+SERIALIZE_VECTOR_IMPL(float)
+SERIALIZE_VECTOR_IMPL(double)
+SERIALIZE_VECTOR_IMPL(std::string)
+
+SERIALIZE_MAP_IMPL(int)
+SERIALIZE_MAP_IMPL(bool)
+SERIALIZE_MAP_IMPL(float)
+SERIALIZE_MAP_IMPL(double)
+SERIALIZE_MAP_IMPL(std::string)
 
 } // namespace cereal

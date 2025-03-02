@@ -34,7 +34,7 @@ class Serializable
 public:
     virtual ~Serializable() = default;
 
-    [[nodiscard]] virtual std::unique_ptr<JsonObject> Serialize() const = 0;
+    [[nodiscard]] virtual std::shared_ptr<JsonObject> Serialize() const = 0;
 };
 
 } // namespace cereal
