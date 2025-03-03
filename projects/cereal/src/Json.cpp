@@ -66,7 +66,14 @@ std::string JsonObject::ToString(bool pretty, int indentLevel, int indentSize) c
             [&oss, pretty, indentLevel, indentSize, this]<typename T>(const T& v) {
                 if constexpr (std::is_same_v<std::decay_t<T>, std::shared_ptr<JsonObject>>)
                 {
-                    oss << v->ToString(pretty, indentLevel + 1, indentSize);
+                    if (v)
+                    {
+                        oss << v->ToString(pretty, indentLevel + 1, indentSize);
+
+                    } else
+                    {
+                        oss << Serialize(nullptr);
+                    }
                 } else if constexpr (std::is_same_v<T, JsonObject>)
                 {
                     oss << v.ToString(pretty, indentLevel + 1, indentSize);

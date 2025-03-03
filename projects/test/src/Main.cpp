@@ -20,6 +20,7 @@ struct TestObject : public cereal::Serializable
         json->Add("nums", nums);
         json->Add("letter", c);
         json->Add("name", "John Doe");
+        json->Add("null", nullptr);
 
         return json;
     }
@@ -67,6 +68,8 @@ int main()
     auto jsonRoot  = obj.Serialize();
     auto jsonChild = obj2.Serialize();
 
+    std::shared_ptr<cereal::JsonObject> jsonChild2;
+
     Vector2 pos;
     pos.x = 1.0f;
     pos.y = 2.0f;
@@ -80,6 +83,7 @@ int main()
     jsonChild->Add("3dcoord", vec.Serialize());
 
     jsonRoot->Add("child", jsonChild);
+    jsonRoot->Add("child2", jsonChild2);
 
     std::cout << jsonRoot->ToString() << std::endl;
 

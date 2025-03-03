@@ -45,7 +45,7 @@
 
 #define VARYING_TYPES int, bool, double, float, char, std::string, std::shared_ptr<JsonObject>, JsonObject
 
-#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES>
+#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES, std::nullptr_t>
 
 
 namespace cereal

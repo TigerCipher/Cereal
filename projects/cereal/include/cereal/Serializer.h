@@ -85,6 +85,12 @@ inline std::string SerializeItem<double>(const double& obj)
     return oss.str();
 }
 
+template<>
+inline std::string SerializeItem<std::nullptr_t>(const std::nullptr_t&)
+{
+    return "null";
+}
+
 
 template<typename T>
 std::string SerializeItem(const std::string_view key, const T& value)

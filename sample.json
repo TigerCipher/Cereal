@@ -2,6 +2,7 @@
     "fruit": "apple", 
     "flag": true, 
     "nums": [1, 2, 3, 4, 5], 
+    "child2": null, 
     "child": {
         "fruit": "orange", 
         "3dcoord": {
@@ -16,8 +17,10 @@
         }, 
         "nums": [5, 4, 3, 2, 1], 
         "letter": "b", 
-        "name": "John Doe"
+        "name": "John Doe", 
+        "null": null
     }, 
     "letter": "b", 
-    "name": "John Doe"
+    "name": "John Doe", 
+    "null": null
 }
