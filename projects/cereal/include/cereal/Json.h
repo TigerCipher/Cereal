@@ -65,6 +65,8 @@ public:
 
     void Add(const std::string& key, JsonValue value);
 
+    void PrintToFile(const std::string_view filename) const;
+
     [[nodiscard]] std::string ToString() const;
 
     friend std::ostream& operator<<(std::ostream& os, const JsonObject& obj)

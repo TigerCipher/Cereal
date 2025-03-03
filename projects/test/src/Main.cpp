@@ -22,6 +22,36 @@ struct TestObject : public cereal::Serializable
     }
 };
 
+struct Vector2 : public cereal::Serializable
+{
+    float x = 0.0f;
+    float y = 0.0f;
+
+    [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() const override
+    {
+        auto json = std::make_shared<cereal::JsonObject>();
+        json->Add("x", x);
+        json->Add("y", y);
+        return json;
+    }
+};
+
+struct Vector3 : public cereal::Serializable
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+
+    [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() const override
+    {
+        auto json = std::make_shared<cereal::JsonObject>();
+        json->Add("x", x);
+        json->Add("y", y);
+        json->Add("z", z);
+        return json;
+    }
+};
+
 
 int main()
 {
@@ -34,10 +64,28 @@ int main()
     auto jsonRoot  = obj.Serialize();
     auto jsonChild = obj2.Serialize();
 
+    Vector2 pos;
+    pos.x = 1.0f;
+    pos.y = 2.0f;
+
+    Vector3 vec;
+    vec.x = 1.76f;
+    vec.y = 2.76f;
+    vec.z = 3.76f;
+
+    jsonChild->Add("2dcoord", pos.Serialize());
+    jsonChild->Add("3dcoord", vec.Serialize());
+
     jsonRoot->Add("child", jsonChild);
 
     std::cout << jsonRoot->ToString() << std::endl;
 
     int thirdNum = jsonRoot->GetObject("child").GetVector<int>("nums")[2];
     std::cout << "Third number in child: " << thirdNum << std::endl;
+
+    float ySpeed = jsonRoot->GetObject("child").GetObject("3dcoord").Get<float>("y");
+    std::cout << "Y speed: " << ySpeed << std::endl;
+
+
+    jsonRoot->PrintToFile("./sample.json");
 }

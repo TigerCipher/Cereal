@@ -33,6 +33,12 @@ void JsonObject::Add(const std::string& key, JsonValue value)
     mValues[key] = std::move(value);
 }
 
+void JsonObject::PrintToFile(const std::string_view filename) const
+{
+    std::ofstream fs(filename.data());
+    fs << ToString();
+}
+
 std::string JsonObject::ToString() const
 {
     std::ostringstream oss;
