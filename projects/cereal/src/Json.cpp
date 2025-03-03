@@ -33,16 +33,16 @@ void JsonObject::Add(const std::string& key, JsonValue value)
     mValues[key] = std::move(value);
 }
 
-void JsonObject::PrintToFile(const std::string_view filename, bool pretty) const
+void JsonObject::PrintToFile(const std::string_view filename, bool pretty, int indentSize) const
 {
     std::ofstream fs(filename.data());
-    fs << ToString(pretty);
+    fs << ToString(pretty, 0, indentSize);
 }
 
-std::string JsonObject::ToString(bool pretty, int indentLevel) const
+std::string JsonObject::ToString(bool pretty, int indentLevel, int indentSize) const
 {
     std::ostringstream oss;
-    std::string        indent  = pretty ? Indent(indentLevel) : "";
+    std::string        indent  = pretty ? Indent(indentLevel, indentSize) : "";
     std::string        newLine = pretty ? "\n" : "";
 
     oss << "{" << newLine;
@@ -54,15 +54,15 @@ std::string JsonObject::ToString(bool pretty, int indentLevel) const
         {
             oss << ", " << newLine;
         }
-        oss << indent << Indent(1) << "\"" << key << "\": ";
+        oss << indent << Indent(1, indentSize) << "\"" << key << "\": ";
         std::visit(
-            [&oss, pretty, indentLevel, this]<typename T>(const T& v) {
+            [&oss, pretty, indentLevel, indentSize, this]<typename T>(const T& v) {
                 if constexpr (std::is_same_v<std::decay_t<T>, std::shared_ptr<JsonObject>>)
                 {
-                    oss << v->ToString(pretty, indentLevel + 1);
+                    oss << v->ToString(pretty, indentLevel + 1, indentSize);
                 } else if constexpr (std::is_same_v<T, JsonObject>)
                 {
-                    oss << v.ToString(pretty, indentLevel + 1);
+                    oss << v.ToString(pretty, indentLevel + 1, indentSize);
                 } else
                 {
                     oss << Serialize(v);

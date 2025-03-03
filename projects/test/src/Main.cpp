@@ -87,23 +87,6 @@ int main()
     std::cout << "Y speed: " << ySpeed << std::endl;
 
 
-    jsonRoot->PrintToFile("./sample.json", true);
+    // jsonRoot->PrintToFile("./sample.json", true, 8); // pretty print with 8 spaces for tabs
+    jsonRoot->PrintToFile("./sample.json", true); // pretty print with default 4 spaces for tabs
 }
-
-/*
-{  "fruit": "apple", 
-  "flag": true, 
-  "nums": [1, 2, 3, 4, 5], 
-  "child": {    "fruit": "orange", 
-    "3dcoord": {      "x": 1.76, 
-      "y": 2.76, 
-      "z": 3.76
-    }, 
-    "flag": false, 
-    "2dcoord": {      "x": 1, 
-      "y": 2
-    }, 
-    "nums": [5, 4, 3, 2, 1]
-  }
-}
- */

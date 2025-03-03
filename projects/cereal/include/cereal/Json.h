@@ -30,6 +30,8 @@
 #include <memory>
 #include <variant>
 
+
+
 #define VEC_TYPE_HELPER(T) std::vector<T>
 #define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
 
@@ -59,15 +61,15 @@ class JsonObject
 public:
     using JsonValue = VARIANT;
 
-    JsonObject() = default;
+    JsonObject()                             = default;
     JsonObject(const JsonObject&)            = default;
     JsonObject& operator=(const JsonObject&) = default;
 
     void Add(const std::string& key, JsonValue value);
 
-    void PrintToFile(const std::string_view filename, bool pretty = false) const;
+    void PrintToFile(const std::string_view filename, bool pretty = false, int indentSize = 4) const;
 
-    [[nodiscard]] std::string ToString(bool pretty = false, int indentLevel = 0) const;
+    [[nodiscard]] std::string ToString(bool pretty = false, int indentLevel = 0, int indentSize = 4) const;
 
     friend std::ostream& operator<<(std::ostream& os, const JsonObject& obj)
     {
@@ -104,7 +106,7 @@ public:
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
 
 private:
-    static std::string Indent(size_t level) { return std::string(level * 2, ' '); }
+    static std::string Indent(size_t level, size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
 
 private:
     std::unordered_map<std::string, JsonValue> mValues;
