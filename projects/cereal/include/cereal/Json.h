@@ -65,9 +65,9 @@ public:
 
     void Add(const std::string& key, JsonValue value);
 
-    void PrintToFile(const std::string_view filename) const;
+    void PrintToFile(const std::string_view filename, bool pretty = false) const;
 
-    [[nodiscard]] std::string ToString() const;
+    [[nodiscard]] std::string ToString(bool pretty = false, int indentLevel = 0) const;
 
     friend std::ostream& operator<<(std::ostream& os, const JsonObject& obj)
     {
@@ -102,6 +102,9 @@ public:
     }
 
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
+
+private:
+    static std::string Indent(size_t level) { return std::string(level * 2, ' '); }
 
 private:
     std::unordered_map<std::string, JsonValue> mValues;
