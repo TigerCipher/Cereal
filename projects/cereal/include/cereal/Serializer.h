@@ -26,11 +26,19 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <unordered_map>
 #include <variant>
 
+#ifndef CEREAL_FLT_PRECISION
+    #define CEREAL_FLT_PRECISION std::numeric_limits<float>::digits10
+#endif
+
+#ifndef CEREAL_DBL_PRECISION
+    #define CEREAL_DBL_PRECISION std::numeric_limits<double>::digits10
+#endif
 
 namespace cereal
 {
@@ -53,6 +61,22 @@ template<>
 inline std::string SerializeItem<bool>(const bool& obj)
 {
     return obj ? "true" : "false";
+}
+
+template<>
+inline std::string SerializeItem<float>(const float& obj)
+{
+    std::ostringstream oss;
+    oss << std::setprecision(CEREAL_FLT_PRECISION) << obj;
+    return oss.str();
+}
+
+template<>
+inline std::string SerializeItem<double>(const double& obj)
+{
+    std::ostringstream oss;
+    oss << std::setprecision(CEREAL_DBL_PRECISION) << obj;
+    return oss.str();
 }
 
 

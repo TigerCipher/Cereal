@@ -32,7 +32,12 @@ namespace cereal
 class Serializable
 {
 public:
-    virtual ~Serializable() = default;
+    Serializable()                                         = default;
+    virtual ~Serializable()                                = default;
+    Serializable(const Serializable& other)                = default;
+    Serializable(Serializable&& other) noexcept            = default;
+    Serializable& operator=(const Serializable& other)     = default;
+    Serializable& operator=(Serializable&& other) noexcept = default;
 
     [[nodiscard]] virtual std::shared_ptr<JsonObject> Serialize() const = 0;
 };

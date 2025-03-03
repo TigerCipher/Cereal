@@ -21,9 +21,10 @@
 //
 // ------------------------------------------------------------------------------
 
-#include "pch.h"
 #include "Json.h"
 #include "Serializer.h"
+
+#include <fstream>
 
 namespace cereal
 {
@@ -36,14 +37,20 @@ void JsonObject::Add(const std::string& key, JsonValue value)
 void JsonObject::PrintToFile(const std::string_view filename, bool pretty, int indentSize) const
 {
     std::ofstream fs(filename.data());
+
+    if (!fs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for writing");
+    }
+
     fs << ToString(pretty, 0, indentSize);
 }
 
 std::string JsonObject::ToString(bool pretty, int indentLevel, int indentSize) const
 {
     std::ostringstream oss;
-    std::string        indent  = pretty ? Indent(indentLevel, indentSize) : "";
-    std::string        newLine = pretty ? "\n" : "";
+    const std::string  indent  = pretty ? Indent(indentLevel, indentSize) : "";
+    const std::string  newLine = pretty ? "\n" : "";
 
     oss << "{" << newLine;
     bool first = true;

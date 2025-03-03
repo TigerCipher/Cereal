@@ -38,9 +38,9 @@ struct Vector2 : public cereal::Serializable
 
 struct Vector3 : public cereal::Serializable
 {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
 
     [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() const override
     {
@@ -69,9 +69,9 @@ int main()
     pos.y = 2.0f;
 
     Vector3 vec;
-    vec.x = 1.76f;
-    vec.y = 2.76f;
-    vec.z = 3.76f;
+    vec.x = 1.76;
+    vec.y = 2.7423432423770929990;
+    vec.z = 3.76;
 
     jsonChild->Add("2dcoord", pos.Serialize());
     jsonChild->Add("3dcoord", vec.Serialize());
@@ -83,7 +83,7 @@ int main()
     int thirdNum = jsonRoot->GetObject("child").GetVector<int>("nums")[2];
     std::cout << "Third number in child: " << thirdNum << std::endl;
 
-    float ySpeed = jsonRoot->GetObject("child").GetObject("3dcoord").Get<float>("y");
+    double ySpeed = jsonRoot->GetObject("child").GetObject("3dcoord").Get<double>("y");
     std::cout << "Y speed: " << ySpeed << std::endl;
 
 

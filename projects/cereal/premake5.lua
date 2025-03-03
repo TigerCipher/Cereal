@@ -5,8 +5,6 @@ project "cereal"
     staticruntime "on"
     systemversion "latest"
     warnings      "extra"
-    pchheader     "pch.h"
-    pchsource     "src/pch.cpp"
     targetdir     (BIN_DIR)
     objdir        (OBJ_DIR)
 
@@ -27,5 +25,5 @@ project "cereal"
         
     }
     defines {
-
+        "CEREAL_DBL_PRECISION=5"
     }

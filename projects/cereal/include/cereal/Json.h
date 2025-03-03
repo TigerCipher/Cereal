@@ -37,13 +37,13 @@
 
 #define VEC_TYPES                                                                                                                \
     VEC_TYPE_HELPER(int), VEC_TYPE_HELPER(bool), VEC_TYPE_HELPER(double), VEC_TYPE_HELPER(float), VEC_TYPE_HELPER(std::string),  \
-        VEC_TYPE_HELPER(std::shared_ptr<JsonObject>)
+        VEC_TYPE_HELPER(std::shared_ptr<JsonObject>), VEC_TYPE_HELPER(JsonObject)
 
 #define MAP_TYPES                                                                                                                \
     MAP_TYPE_HELPER(int), MAP_TYPE_HELPER(bool), MAP_TYPE_HELPER(double), MAP_TYPE_HELPER(float), MAP_TYPE_HELPER(std::string),  \
-        MAP_TYPE_HELPER(std::shared_ptr<JsonObject>)
+        MAP_TYPE_HELPER(std::shared_ptr<JsonObject>), MAP_TYPE_HELPER(JsonObject)
 
-#define VARYING_TYPES int, bool, double, float, std::string, std::shared_ptr<JsonObject>
+#define VARYING_TYPES int, bool, double, float, std::string, std::shared_ptr<JsonObject>, JsonObject
 
 #define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES>
 
