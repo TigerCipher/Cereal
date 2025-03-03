@@ -37,12 +37,6 @@ std::string JsonObject::ToString() const
 {
     std::ostringstream oss;
 
-    if (mIsSingleValue)
-    {
-        oss << Serialize(mValue);
-        return oss.str();
-    }
-
     oss << "{";
     bool first = true;
 

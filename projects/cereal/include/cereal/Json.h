@@ -60,13 +60,18 @@ public:
     using JsonValue = VARIANT;
 
     JsonObject() = default;
-    explicit JsonObject(JsonValue value) : mValue(std::move(value)), mIsSingleValue(true) {}
     JsonObject(const JsonObject&)            = default;
     JsonObject& operator=(const JsonObject&) = default;
 
     void Add(const std::string& key, JsonValue value);
 
     [[nodiscard]] std::string ToString() const;
+
+    friend std::ostream& operator<<(std::ostream& os, const JsonObject& obj)
+    {
+        os << obj.ToString();
+        return os;
+    }
 
     [[nodiscard]] const std::unordered_map<std::string, JsonValue>& GetValues() const { return mValues; }
 
@@ -98,8 +103,6 @@ public:
 
 private:
     std::unordered_map<std::string, JsonValue> mValues;
-    JsonValue                                  mValue;
-    bool                                       mIsSingleValue;
 };
 
 template<>
@@ -108,7 +111,5 @@ inline std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<
     return obj->ToString();
 }
 
-SERIALIZE_VECTOR_IMPL(std::shared_ptr<JsonObject>)
-SERIALIZE_MAP_IMPL(std::shared_ptr<JsonObject>)
 
 } // namespace cereal

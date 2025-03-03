@@ -1,8 +1,6 @@
 #include "cereal/Cereal.h"
 
 #include <iostream>
-#include <sstream>
-#include <unordered_map>
 #include <vector>
 
 
@@ -33,13 +31,13 @@ int main()
     obj2.flag  = false;
     obj2.nums  = { 5, 4, 3, 2, 1 };
 
-    auto jsonRoot = obj.Serialize();
+    auto jsonRoot  = obj.Serialize();
     auto jsonChild = obj2.Serialize();
 
     jsonRoot->Add("child", jsonChild);
 
     std::cout << jsonRoot->ToString() << std::endl;
 
-    int                thirdNum = jsonRoot->GetObject("child").GetVector<int>("nums")[2];
+    int thirdNum = jsonRoot->GetObject("child").GetVector<int>("nums")[2];
     std::cout << "Third number in child: " << thirdNum << std::endl;
 }
