@@ -58,6 +58,12 @@ inline std::string SerializeItem<std::string>(const std::string& obj)
 }
 
 template<>
+inline std::string SerializeItem<char>(const char& obj)
+{
+    return "\"" + std::string(1, obj) + "\"";
+}
+
+template<>
 inline std::string SerializeItem<bool>(const bool& obj)
 {
     return obj ? "true" : "false";

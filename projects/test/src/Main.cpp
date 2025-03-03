@@ -9,7 +9,8 @@ struct TestObject : public cereal::Serializable
     std::string         apple = "apple";
     bool                flag  = true;
     std::vector<int>    nums  = { 1, 2, 3, 4, 5 };
-    std::array<bool, 3> bools = { true, false, true };
+    std::array<bool, 3> bools = { true, false, true }; // TODO: Add support for std::array
+    char c = 'b';
 
     [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() const override
     {
@@ -17,6 +18,8 @@ struct TestObject : public cereal::Serializable
         json->Add("fruit", apple);
         json->Add("flag", flag);
         json->Add("nums", nums);
+        json->Add("letter", c);
+        json->Add("name", "John Doe");
 
         return json;
     }
