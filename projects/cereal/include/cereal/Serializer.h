@@ -31,6 +31,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <variant>
+#include <span>
 
 #ifndef CEREAL_FLT_PRECISION
     #define CEREAL_FLT_PRECISION std::numeric_limits<float>::digits10
@@ -134,6 +135,23 @@ std::string SerializeVector(const std::vector<T>& vec)
 }
 
 template<typename T>
+std::string SerializeSpan(const std::span<T> vec)
+{
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        oss << cereal::SerializeItem(vec[i]);
+        if (i != vec.size() - 1)
+        {
+            oss << ", ";
+        }
+    }
+    oss << "]";
+    return oss.str();
+}
+
+template<typename T>
 std::string SerializeMap(const std::unordered_map<std::string, T>& map)
 {
     std::ostringstream oss;
@@ -168,6 +186,12 @@ template<typename T>
 struct Serializer<std::unordered_map<std::string, T>>
 {
     static std::string Serialize(const std::unordered_map<std::string, T>& obj) { return SerializeMap(obj); }
+};
+
+template<typename T>
+struct Serializer<std::span<T>>
+{
+    static std::string Serialize(const std::span<T> obj) { return SerializeSpan(obj); }
 };
 
 template<typename... Ts>

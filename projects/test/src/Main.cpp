@@ -9,6 +9,9 @@ struct TestObject : public cereal::Serializable
     std::string         apple = "apple";
     bool                flag  = true;
     std::vector<int>    nums  = { 1, 2, 3, 4, 5 };
+    std::array<float, 5> spanArray = { 1.5f, 2.4f, 3.0f, 4.2f, 5.0f };
+    std::span<float>    span  = spanArray;
+    std::span<int> numSpan = nums;
     std::array<bool, 3> bools = { true, false, true }; // TODO: Add support for std::array
     char c = 'b';
 
@@ -21,6 +24,8 @@ struct TestObject : public cereal::Serializable
         json->Add("letter", c);
         json->Add("name", "John Doe");
         json->Add("null", nullptr);
+        json->Add("span", span);
+        json->Add("spannum", numSpan);
 
         return json;
     }

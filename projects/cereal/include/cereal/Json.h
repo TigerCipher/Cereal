@@ -29,10 +29,12 @@
 #include <vector>
 #include <memory>
 #include <variant>
+#include <span>
 
 
 #define VEC_TYPE_HELPER(T) std::vector<T>
 #define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
+#define SPAN_TYPE_HELPER(T) std::span<T>
 
 #define VEC_TYPES                                                                                                                \
     VEC_TYPE_HELPER(int), VEC_TYPE_HELPER(bool), VEC_TYPE_HELPER(double), VEC_TYPE_HELPER(float), VEC_TYPE_HELPER(std::string),  \
@@ -42,9 +44,14 @@
     MAP_TYPE_HELPER(int), MAP_TYPE_HELPER(bool), MAP_TYPE_HELPER(double), MAP_TYPE_HELPER(float), MAP_TYPE_HELPER(std::string),  \
         MAP_TYPE_HELPER(std::shared_ptr<JsonObject>), MAP_TYPE_HELPER(JsonObject), MAP_TYPE_HELPER(char)
 
+#define SPAN_TYPES                                                                                                               \
+    SPAN_TYPE_HELPER(int), SPAN_TYPE_HELPER(bool), SPAN_TYPE_HELPER(double), SPAN_TYPE_HELPER(float),                            \
+        SPAN_TYPE_HELPER(std::string), SPAN_TYPE_HELPER(std::shared_ptr<JsonObject>), SPAN_TYPE_HELPER(JsonObject),              \
+        SPAN_TYPE_HELPER(char)
+
 #define VARYING_TYPES int, bool, double, float, char, std::string, std::shared_ptr<JsonObject>, JsonObject
 
-#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES, std::nullptr_t>
+#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES, SPAN_TYPES, std::nullptr_t>
 
 
 namespace cereal
