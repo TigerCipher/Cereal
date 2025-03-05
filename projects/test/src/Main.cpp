@@ -110,13 +110,16 @@ int main()
         double ySpeed = jsonRoot->GetObject("child").GetObject("3dcoord").Get<double>("y");
         std::cout << "Y speed: " << ySpeed << std::endl;
 
-        auto json   = *jsonRoot;
-        int  xSpeed = json["child"]["3dcoord"]["x"];
+        auto   json   = *jsonRoot;
+        double xSpeed = json["child"]["3dcoord"]["x"];
         std::cout << "X speed: " << xSpeed << std::endl;
 
 
         // jsonRoot->PrintToFile("./sample.json", true, 8); // pretty print with 8 spaces for tabs
         jsonRoot->PrintToFile("./sample.json", true); // pretty print with default 4 spaces for tabs
+
+        // show-casing type mismatch error
+        int z = json["child"]["3dcoord"]["z"];
 
     } catch (std::exception& e)
     {

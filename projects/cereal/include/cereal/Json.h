@@ -179,7 +179,15 @@ public:
         {
             if (!std::holds_alternative<T>(mValue))
             {
-                throw std::runtime_error("Type mismatch: " + GetTypeName<T>() + " for key: " + mKey);
+                // Get expected type (T)
+                const std::string expectedType = GetTypeName<T>();
+
+                // Get actual type stored in mValue
+                const std::string actualType = std::visit(
+                    []<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
+
+                throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                         "' for key: " + mKey);
             }
             return std::get<T>(mValue);
         }
