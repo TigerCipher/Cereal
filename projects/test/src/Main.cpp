@@ -93,6 +93,18 @@ int main()
     double ySpeed = jsonRoot->GetObject("child").GetObject("3dcoord").Get<double>("y");
     std::cout << "Y speed: " << ySpeed << std::endl;
 
+    // auto ch = (*jsonRoot)["child"];
+
+    cereal::JsonObject json = *jsonRoot;
+    auto               ch   = json["child"];
+    auto yc = ch["3dcoord"];
+    double             y    = yc["y"];
+
+    std::cout << "Y speed: " << y << std::endl;
+
+    double xSpeed = json["child"]["3dcoord"]["x"];
+    std::cout << "X speed: " << xSpeed << std::endl;
+
 
     // jsonRoot->PrintToFile("./sample.json", true, 8); // pretty print with 8 spaces for tabs
     jsonRoot->PrintToFile("./sample.json", true); // pretty print with default 4 spaces for tabs

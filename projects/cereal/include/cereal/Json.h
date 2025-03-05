@@ -31,7 +31,6 @@
 #include <variant>
 
 
-
 #define VEC_TYPE_HELPER(T) std::vector<T>
 #define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
 
@@ -79,7 +78,7 @@ public:
 
     [[nodiscard]] const std::unordered_map<std::string, JsonValue>& GetValues() const { return mValues; }
 
-    JsonValue& operator[](const std::string& key) { return mValues[key]; }
+    // JsonValue& operator[](const std::string& key) { return mValues[key]; }
 
     template<typename T>
     [[nodiscard]] const T& Get(const std::string& key) const
@@ -104,6 +103,25 @@ public:
     }
 
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
+
+    class JsonProxy
+    {
+    public:
+        JsonProxy(JsonValue& value) : mValue(value) {}
+
+        template<typename T>
+        operator T() const
+        {
+            return std::get<T>(mValue);
+        }
+
+        JsonProxy operator[](const std::string& key) { return JsonProxy(std::get<std::shared_ptr<JsonObject>>(mValue)->mValues[key]); }
+
+    private:
+        JsonValue& mValue;
+    };
+
+    JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key]); }
 
 private:
     static std::string Indent(size_t level, size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
