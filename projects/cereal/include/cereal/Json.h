@@ -183,8 +183,8 @@ public:
                 const std::string expectedType = GetTypeName<T>();
 
                 // Get actual type stored in mValue
-                const std::string actualType = std::visit(
-                    []<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
+                const std::string actualType =
+                    std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
 
                 throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
                                          "' for key: " + mKey);
@@ -198,11 +198,21 @@ public:
         }
 
     private:
-        JsonValue& mValue;
+        JsonValue&         mValue;
         const std::string& mKey;
     };
 
     JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key], key); }
+
+    const JsonProxy operator[](const std::string& key) const
+    {
+        const auto it = mValues.find(key);
+        if (it == mValues.end())
+        {
+            throw std::runtime_error("Key not found in JsonObject: " + key);
+        }
+        return JsonProxy(const_cast<JsonValue&>(it->second), key);
+    }
 
 private:
     static std::string Indent(const size_t level, const size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
