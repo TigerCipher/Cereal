@@ -30,10 +30,55 @@
 #include <memory>
 #include <variant>
 #include <span>
+#include <typeinfo>
+
+#if defined(__GNUG__) // GCC / Clang
+    #include <cxxabi.h>
+    #include <cstdlib>
+
+    #define DEMANGLE_NAME(name)                                                                                                  \
+        int         status    = 0;                                                                                               \
+        char*       demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);                                            \
+        std::string result    = (status == 0) ? demangled : name;                                                                \
+        free(demangled);                                                                                                         \
+        return result
+
+#elif defined(_MSC_VER) // MSVC
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+    #include <dbghelp.h>
+
+    #pragma comment(lib, "dbghelp.lib")
+
+inline std::string DemangleTypeName(const char* name)
+{
+    if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))
+    {
+        return std::string(demangled);
+    }
+    return name; // If demangling fails, return raw name
+}
+
+    #define DEMANGLE_NAME(name)                                                                                                  \
+        if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))                    \
+        {                                                                                                                        \
+            return std::string(demangled);                                                                                       \
+        }                                                                                                                        \
+        return name // If demangling fails, return raw name
+
+#else // Fallback
+    #define DEMANGLE_NAME(name) name
+#endif
+
+template<typename T>
+std::string GetTypeName()
+{
+    DEMANGLE_NAME(typeid(T).name());
+}
 
 
-#define VEC_TYPE_HELPER(T) std::vector<T>
-#define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
+#define VEC_TYPE_HELPER(T)  std::vector<T>
+#define MAP_TYPE_HELPER(T)  std::unordered_map<std::string, T>
 #define SPAN_TYPE_HELPER(T) std::span<T>
 
 #define VEC_TYPES                                                                                                                \
@@ -90,9 +135,15 @@ public:
     template<typename T>
     [[nodiscard]] const T& Get(const std::string& key) const
     {
-        if (!mValues.contains(key))
+        const auto it = mValues.find(key);
+        if (it == mValues.end())
         {
-            throw std::runtime_error("Key not found in JsonObject");
+            throw std::runtime_error("Key not found in JsonObject: " + key);
+        }
+
+        if (!std::holds_alternative<T>(it->second))
+        {
+            throw std::runtime_error("Type mismatch for key: " + key);
         }
 
         return std::get<T>(mValues.at(key));
@@ -114,24 +165,39 @@ public:
     class JsonProxy
     {
     public:
-        JsonProxy(JsonValue& value) : mValue(value) {}
+        JsonProxy(JsonValue& value, const std::string& key) : mValue(value), mKey(key) {}
+
+        template<typename T>
+        JsonProxy& operator=(const T& value)
+        {
+            mValue = value;
+            return *this;
+        }
 
         template<typename T>
         operator T() const
         {
+            if (!std::holds_alternative<T>(mValue))
+            {
+                throw std::runtime_error("Type mismatch: " + GetTypeName<T>() + " for key: " + mKey);
+            }
             return std::get<T>(mValue);
         }
 
-        JsonProxy operator[](const std::string& key) { return JsonProxy(std::get<std::shared_ptr<JsonObject>>(mValue)->mValues[key]); }
+        JsonProxy operator[](const std::string& key) const
+        {
+            return JsonProxy(std::get<std::shared_ptr<JsonObject>>(mValue)->mValues[key], key);
+        }
 
     private:
         JsonValue& mValue;
+        const std::string& mKey;
     };
 
-    JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key]); }
+    JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key], key); }
 
 private:
-    static std::string Indent(size_t level, size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
+    static std::string Indent(const size_t level, const size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
 
 private:
     std::unordered_map<std::string, JsonValue> mValues;
