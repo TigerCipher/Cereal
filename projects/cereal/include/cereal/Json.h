@@ -32,23 +32,25 @@
 #include <span>
 #include <typeinfo>
 
-#if defined(__GNUG__) // GCC / Clang
-    #include <cxxabi.h>
-    #include <cstdlib>
+#ifdef _DEBUG
 
-    #define DEMANGLE_NAME(name)                                                                                                  \
-        int         status    = 0;                                                                                               \
-        char*       demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);                                            \
-        std::string result    = (status == 0) ? demangled : name;                                                                \
-        free(demangled);                                                                                                         \
-        return result
+    #if defined(__GNUG__) // GCC / Clang
+        #include <cxxabi.h>
+        #include <cstdlib>
 
-#elif defined(_MSC_VER) // MSVC
-    #define WIN32_LEAN_AND_MEAN
-    #include <windows.h>
-    #include <dbghelp.h>
+        #define DEMANGLE_NAME(name)                                                                                              \
+            int         status    = 0;                                                                                           \
+            char*       demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);                                        \
+            std::string result    = (status == 0) ? demangled : name;                                                            \
+            free(demangled);                                                                                                     \
+            return result
 
-    #pragma comment(lib, "dbghelp.lib")
+    #elif defined(_MSC_VER) // MSVC
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+        #include <dbghelp.h>
+
+        #pragma comment(lib, "dbghelp.lib")
 
 inline std::string DemangleTypeName(const char* name)
 {
@@ -59,15 +61,18 @@ inline std::string DemangleTypeName(const char* name)
     return name; // If demangling fails, return raw name
 }
 
-    #define DEMANGLE_NAME(name)                                                                                                  \
-        if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))                    \
-        {                                                                                                                        \
-            return std::string(demangled);                                                                                       \
-        }                                                                                                                        \
-        return name // If demangling fails, return raw name
+        #define DEMANGLE_NAME(name)                                                                                              \
+            if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))                \
+            {                                                                                                                    \
+                return std::string(demangled);                                                                                   \
+            }                                                                                                                    \
+            return name // If demangling fails, return raw name
 
-#else // Fallback
-    #define DEMANGLE_NAME(name) name
+    #else // Fallback
+        #define DEMANGLE_NAME(name) return name
+    #endif
+#else
+    #define DEMANGLE_NAME(name) return name
 #endif
 
 template<typename T>
@@ -77,26 +82,32 @@ std::string GetTypeName()
 }
 
 
-#define VEC_TYPE_HELPER(T)  std::vector<T>
 #define MAP_TYPE_HELPER(T)  std::unordered_map<std::string, T>
 #define SPAN_TYPE_HELPER(T) std::span<T>
+#define VEC_TYPE_HELPER(T)  std::vector<T>
+#define GET_TYPE(x)         x
 
-#define VEC_TYPES                                                                                                                \
-    VEC_TYPE_HELPER(int), VEC_TYPE_HELPER(bool), VEC_TYPE_HELPER(double), VEC_TYPE_HELPER(float), VEC_TYPE_HELPER(std::string),  \
-        VEC_TYPE_HELPER(std::shared_ptr<JsonObject>), VEC_TYPE_HELPER(JsonObject), VEC_TYPE_HELPER(char)
+#define APPLY_MACRO_TO_TYPE(macro, type) macro(type)
 
-#define MAP_TYPES                                                                                                                \
-    MAP_TYPE_HELPER(int), MAP_TYPE_HELPER(bool), MAP_TYPE_HELPER(double), MAP_TYPE_HELPER(float), MAP_TYPE_HELPER(std::string),  \
-        MAP_TYPE_HELPER(std::shared_ptr<JsonObject>), MAP_TYPE_HELPER(JsonObject), MAP_TYPE_HELPER(char)
+// clang-format off
+#define TYPE_VARIANTS(macro, T)                              \
+    APPLY_MACRO_TO_TYPE(macro, T),                           \
+    APPLY_MACRO_TO_TYPE(macro, std::shared_ptr<T>)           \
 
-#define SPAN_TYPES                                                                                                               \
-    SPAN_TYPE_HELPER(int), SPAN_TYPE_HELPER(bool), SPAN_TYPE_HELPER(double), SPAN_TYPE_HELPER(float),                            \
-        SPAN_TYPE_HELPER(std::string), SPAN_TYPE_HELPER(std::shared_ptr<JsonObject>), SPAN_TYPE_HELPER(JsonObject),              \
-        SPAN_TYPE_HELPER(char)
+#define APPLY_MACRO(macro)                                   \
+    TYPE_VARIANTS(macro, int),                               \
+    TYPE_VARIANTS(macro, bool),                              \
+    TYPE_VARIANTS(macro, double),                            \
+    TYPE_VARIANTS(macro, float),                             \
+    TYPE_VARIANTS(macro, char),                              \
+    TYPE_VARIANTS(macro, std::string),                       \
+    TYPE_VARIANTS(macro, JsonObject)
+// clang-format on
 
-#define VARYING_TYPES int, bool, double, float, char, std::string, std::shared_ptr<JsonObject>, JsonObject
 
-#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES, SPAN_TYPES, std::nullptr_t>
+#define TYPES APPLY_MACRO(MAP_TYPE_HELPER), APPLY_MACRO(SPAN_TYPE_HELPER), APPLY_MACRO(GET_TYPE) // APPLY_MACRO(VEC_TYPE_HELPER)
+
+#define VARIANT std::variant<TYPES, std::nullptr_t>
 
 
 namespace cereal
@@ -110,8 +121,7 @@ std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObj
 class JsonObject
 {
 public:
-    using JsonValue = VARIANT;
-
+    using JsonValue                          = VARIANT;
     JsonObject()                             = default;
     JsonObject(const JsonObject&)            = default;
     JsonObject& operator=(const JsonObject&) = default;
@@ -129,8 +139,6 @@ public:
     }
 
     [[nodiscard]] const std::unordered_map<std::string, JsonValue>& GetValues() const { return mValues; }
-
-    // JsonValue& operator[](const std::string& key) { return mValues[key]; }
 
     template<typename T>
     [[nodiscard]] const T& Get(const std::string& key) const
@@ -150,9 +158,9 @@ public:
     }
 
     template<typename T>
-    [[nodiscard]] const std::vector<T>& GetVector(const std::string& key) const
+    [[nodiscard]] const std::span<T>& GetSpan(const std::string& key) const
     {
-        return Get<std::vector<T>>(key);
+        return Get<std::span<T>>(key);
     }
 
     [[nodiscard]] const std::shared_ptr<JsonObject>& GetObjectPtr(const std::string& key) const
@@ -179,10 +187,8 @@ public:
         {
             if (!std::holds_alternative<T>(mValue))
             {
-                // Get expected type (T)
                 const std::string expectedType = GetTypeName<T>();
 
-                // Get actual type stored in mValue
                 const std::string actualType =
                     std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
 
