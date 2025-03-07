@@ -32,6 +32,8 @@
 #include <span>
 #include <typeinfo>
 
+#pragma region Preprocessor Macros
+
 #ifdef _DEBUG
 
     #if defined(__GNUG__) // GCC / Clang
@@ -109,6 +111,7 @@ std::string GetTypeName()
 
 #define VARIANT std::variant<TYPES, std::nullptr_t>
 
+#pragma endregion Preprocessor Macros
 
 namespace cereal
 {
@@ -151,7 +154,13 @@ public:
 
         if (!std::holds_alternative<T>(it->second))
         {
-            throw std::runtime_error("Type mismatch for key: " + key);
+            const std::string expectedType = GetTypeName<T>();
+
+            const std::string actualType =
+                std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, it->second);
+
+            throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                     "' for key: " + key);
         }
 
         return std::get<T>(mValues.at(key));
@@ -169,6 +178,8 @@ public:
     }
 
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
+
+    #pragma region Json Proxy
 
     class JsonProxy
     {
@@ -207,6 +218,8 @@ public:
         JsonValue&         mValue;
         const std::string& mKey;
     };
+
+    #pragma endregion Json Proxy
 
     JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key], key); }
 
