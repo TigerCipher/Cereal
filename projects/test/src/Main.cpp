@@ -1,5 +1,8 @@
 #include "cereal/Cereal.h"
 
+#include "cereal/JsonParser.h"
+
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -13,7 +16,7 @@ struct TestObject : public cereal::Serializable
 
     std::array<float, 5> spanArray = { 1.5f, 2.4f, 3.0f, 4.2f, 5.0f };
 
-    std::array<bool, 3> bools   = { true, false, true };
+    std::array<bool, 3> bools = { true, false, true };
 
     char c = 'b';
 
@@ -48,7 +51,7 @@ struct TestObject : public cereal::Serializable
         // Raw pointers, and there for C srrays and multi-dimensional arrays are not supported and must
         // be converted to a flat span
         std::span<char> flatSpan{ &tilemap[0][0], sizeof(tilemap) };
-        json["tilemap"]                     = flatSpan;
+        json["tilemap"] = flatSpan;
 
         return std::make_shared<cereal::JsonObject>(json);
     }
@@ -150,6 +153,18 @@ int main()
     } catch (std::exception& e)
     {
         std::cout << e.what() << std::endl;
-        return 0;
     }
+
+    try
+    {
+        std::ifstream      file("./sample.json");
+        std::string        str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        cereal::JsonObject parsedRoot = cereal::Parse(str);
+        std::cout << parsedRoot << std::endl; // bad allocation?
+    } catch (std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+
+    return 0;
 }

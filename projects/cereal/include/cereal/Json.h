@@ -103,7 +103,8 @@ std::string GetTypeName()
     TYPE_VARIANTS(macro, float),                             \
     TYPE_VARIANTS(macro, char),                              \
     TYPE_VARIANTS(macro, std::string),                       \
-    TYPE_VARIANTS(macro, JsonObject)
+    TYPE_VARIANTS(macro, JsonObject),                        \
+    TYPE_VARIANTS(macro, uint8_t)
 // clang-format on
 
 
@@ -117,6 +118,7 @@ namespace cereal
 {
 
 class JsonObject;
+using JsonValue = VARIANT;
 
 template<>
 std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObject>& obj);
@@ -124,7 +126,6 @@ std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObj
 class JsonObject
 {
 public:
-    using JsonValue                          = VARIANT;
     JsonObject()                             = default;
     JsonObject(const JsonObject&)            = default;
     JsonObject& operator=(const JsonObject&) = default;
@@ -179,7 +180,7 @@ public:
 
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
 
-    #pragma region Json Proxy
+#pragma region Json Proxy
 
     class JsonProxy
     {
@@ -219,7 +220,7 @@ public:
         const std::string& mKey;
     };
 
-    #pragma endregion Json Proxy
+#pragma endregion Json Proxy
 
     JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key], key); }
 
