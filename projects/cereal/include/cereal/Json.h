@@ -29,24 +29,89 @@
 #include <vector>
 #include <memory>
 #include <variant>
+#include <span>
+#include <typeinfo>
+
+#pragma region Preprocessor Macros
+
+#ifdef _DEBUG
+
+    #if defined(__GNUG__) // GCC / Clang
+        #include <cxxabi.h>
+        #include <cstdlib>
+
+        #define DEMANGLE_NAME(name)                                                                                              \
+            int         status    = 0;                                                                                           \
+            char*       demangled = abi::__cxa_demangle(name, nullptr, nullptr, &status);                                        \
+            std::string result    = (status == 0) ? demangled : name;                                                            \
+            free(demangled);                                                                                                     \
+            return result
+
+    #elif defined(_MSC_VER) // MSVC
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+        #include <dbghelp.h>
+
+        #pragma comment(lib, "dbghelp.lib")
+
+inline std::string DemangleTypeName(const char* name)
+{
+    if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))
+    {
+        return std::string(demangled);
+    }
+    return name; // If demangling fails, return raw name
+}
+
+        #define DEMANGLE_NAME(name)                                                                                              \
+            if (char demangled[1024]; UnDecorateSymbolName(name, demangled, sizeof(demangled), UNDNAME_COMPLETE))                \
+            {                                                                                                                    \
+                return std::string(demangled);                                                                                   \
+            }                                                                                                                    \
+            return name // If demangling fails, return raw name
+
+    #else // Fallback
+        #define DEMANGLE_NAME(name) return name
+    #endif
+#else
+    #define DEMANGLE_NAME(name) return name
+#endif
+
+template<typename T>
+std::string GetTypeName()
+{
+    DEMANGLE_NAME(typeid(T).name());
+}
 
 
+#define MAP_TYPE_HELPER(T)  std::unordered_map<std::string, T>
+#define SPAN_TYPE_HELPER(T) std::span<T>
+#define VEC_TYPE_HELPER(T)  std::vector<T>
+#define GET_TYPE(x)         x
 
-#define VEC_TYPE_HELPER(T) std::vector<T>
-#define MAP_TYPE_HELPER(T) std::unordered_map<std::string, T>
+#define APPLY_MACRO_TO_TYPE(macro, type) macro(type)
 
-#define VEC_TYPES                                                                                                                \
-    VEC_TYPE_HELPER(int), VEC_TYPE_HELPER(bool), VEC_TYPE_HELPER(double), VEC_TYPE_HELPER(float), VEC_TYPE_HELPER(std::string),  \
-        VEC_TYPE_HELPER(std::shared_ptr<JsonObject>), VEC_TYPE_HELPER(JsonObject), VEC_TYPE_HELPER(char)
+// clang-format off
+#define TYPE_VARIANTS(macro, T)                              \
+    APPLY_MACRO_TO_TYPE(macro, T),                           \
+    APPLY_MACRO_TO_TYPE(macro, std::shared_ptr<T>)           \
 
-#define MAP_TYPES                                                                                                                \
-    MAP_TYPE_HELPER(int), MAP_TYPE_HELPER(bool), MAP_TYPE_HELPER(double), MAP_TYPE_HELPER(float), MAP_TYPE_HELPER(std::string),  \
-        MAP_TYPE_HELPER(std::shared_ptr<JsonObject>), MAP_TYPE_HELPER(JsonObject), MAP_TYPE_HELPER(char)
+#define APPLY_MACRO(macro)                                   \
+    TYPE_VARIANTS(macro, int),                               \
+    TYPE_VARIANTS(macro, bool),                              \
+    TYPE_VARIANTS(macro, double),                            \
+    TYPE_VARIANTS(macro, float),                             \
+    TYPE_VARIANTS(macro, char),                              \
+    TYPE_VARIANTS(macro, std::string),                       \
+    TYPE_VARIANTS(macro, JsonObject)
+// clang-format on
 
-#define VARYING_TYPES int, bool, double, float, char, std::string, std::shared_ptr<JsonObject>, JsonObject
 
-#define VARIANT std::variant<VARYING_TYPES, VEC_TYPES, MAP_TYPES, std::nullptr_t>
+#define TYPES APPLY_MACRO(MAP_TYPE_HELPER), APPLY_MACRO(SPAN_TYPE_HELPER), APPLY_MACRO(GET_TYPE) // APPLY_MACRO(VEC_TYPE_HELPER)
 
+#define VARIANT std::variant<TYPES, std::nullptr_t>
+
+#pragma endregion Preprocessor Macros
 
 namespace cereal
 {
@@ -59,8 +124,7 @@ std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObj
 class JsonObject
 {
 public:
-    using JsonValue = VARIANT;
-
+    using JsonValue                          = VARIANT;
     JsonObject()                             = default;
     JsonObject(const JsonObject&)            = default;
     JsonObject& operator=(const JsonObject&) = default;
@@ -79,23 +143,33 @@ public:
 
     [[nodiscard]] const std::unordered_map<std::string, JsonValue>& GetValues() const { return mValues; }
 
-    JsonValue& operator[](const std::string& key) { return mValues[key]; }
-
     template<typename T>
     [[nodiscard]] const T& Get(const std::string& key) const
     {
-        if (!mValues.contains(key))
+        const auto it = mValues.find(key);
+        if (it == mValues.end())
         {
-            throw std::runtime_error("Key not found in JsonObject");
+            throw std::runtime_error("Key not found in JsonObject: " + key);
+        }
+
+        if (!std::holds_alternative<T>(it->second))
+        {
+            const std::string expectedType = GetTypeName<T>();
+
+            const std::string actualType =
+                std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, it->second);
+
+            throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                     "' for key: " + key);
         }
 
         return std::get<T>(mValues.at(key));
     }
 
     template<typename T>
-    [[nodiscard]] const std::vector<T>& GetVector(const std::string& key) const
+    [[nodiscard]] const std::span<T>& GetSpan(const std::string& key) const
     {
-        return Get<std::vector<T>>(key);
+        return Get<std::span<T>>(key);
     }
 
     [[nodiscard]] const std::shared_ptr<JsonObject>& GetObjectPtr(const std::string& key) const
@@ -105,8 +179,62 @@ public:
 
     [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
 
+    #pragma region Json Proxy
+
+    class JsonProxy
+    {
+    public:
+        JsonProxy(JsonValue& value, const std::string& key) : mValue(value), mKey(key) {}
+
+        template<typename T>
+        JsonProxy& operator=(const T& value)
+        {
+            mValue = value;
+            return *this;
+        }
+
+        template<typename T>
+        operator T() const
+        {
+            if (!std::holds_alternative<T>(mValue))
+            {
+                const std::string expectedType = GetTypeName<T>();
+
+                const std::string actualType =
+                    std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
+
+                throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                         "' for key: " + mKey);
+            }
+            return std::get<T>(mValue);
+        }
+
+        JsonProxy operator[](const std::string& key) const
+        {
+            return JsonProxy(std::get<std::shared_ptr<JsonObject>>(mValue)->mValues[key], key);
+        }
+
+    private:
+        JsonValue&         mValue;
+        const std::string& mKey;
+    };
+
+    #pragma endregion Json Proxy
+
+    JsonProxy operator[](const std::string& key) { return JsonProxy(mValues[key], key); }
+
+    const JsonProxy operator[](const std::string& key) const
+    {
+        const auto it = mValues.find(key);
+        if (it == mValues.end())
+        {
+            throw std::runtime_error("Key not found in JsonObject: " + key);
+        }
+        return JsonProxy(const_cast<JsonValue&>(it->second), key);
+    }
+
 private:
-    static std::string Indent(size_t level, size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
+    static std::string Indent(const size_t level, const size_t indentSize = 4) { return std::string(level * indentSize, ' '); }
 
 private:
     std::unordered_map<std::string, JsonValue> mValues;
