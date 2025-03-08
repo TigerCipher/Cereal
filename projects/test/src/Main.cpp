@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <ostream>
 
 
 struct TestObject : public cereal::Serializable
@@ -26,6 +27,8 @@ struct TestObject : public cereal::Serializable
         { 'd', 'e', 'f' },
         { 'g', 'h', 'i' }
     };
+
+    int num = 37;
 
     [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() override
     {
@@ -54,6 +57,8 @@ struct TestObject : public cereal::Serializable
         std::span<char> flatSpan{ &tilemap[0][0], sizeof(tilemap) };
         json["tilemap"] = flatSpan;
 
+        json["num"] = num;
+
         return std::make_shared<cereal::JsonObject>(json);
     }
 };
@@ -66,6 +71,15 @@ struct Vector2 : public cereal::Serializable
     Vector2() = default;
     Vector2(float xx, float yy) : x(xx), y(yy) {}
 
+    Vector2(const cereal::JsonObject& json)
+    {
+        x = json["x"];
+        y = json["y"];
+
+        // x = static_cast<float>(xx);
+        // y = static_cast<float>(yy);
+    }
+
     [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() override
     {
         cereal::JsonObject json;
@@ -73,6 +87,8 @@ struct Vector2 : public cereal::Serializable
         json.Add("y", y);
         return std::make_shared<cereal::JsonObject>(json);
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const Vector2& obj) { return os << " x: " << obj.x << " y: " << obj.y; }
 };
 
 struct Vector3 : public cereal::Serializable
@@ -82,6 +98,16 @@ struct Vector3 : public cereal::Serializable
     double z = 0.0;
 
     Vector2 pos{ 3.4f, 2.f };
+
+    Vector3() = default;
+
+    Vector3(const cereal::JsonObject& json)
+    {
+        x   = json["x"];
+        y   = json["y"];
+        z   = json["z"];
+        pos = Vector2((cereal::JsonObject) json["pos"]);
+    }
 
     [[nodiscard]] std::shared_ptr<cereal::JsonObject> Serialize() override
     {
@@ -93,6 +119,11 @@ struct Vector3 : public cereal::Serializable
         json["pos"] = pos.Serialize();
 
         return std::make_shared<cereal::JsonObject>(json);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Vector3& obj)
+    {
+        return os << "x: " << obj.x << " y: " << obj.y << " z: " << obj.z << " pos: " << obj.pos;
     }
 };
 
@@ -148,8 +179,21 @@ int main()
         // jsonRoot->PrintToFile("./sample.json", true, 8); // pretty print with 8 spaces for tabs
         jsonRoot->PrintToFile("./sample.json", true); // pretty print with default 4 spaces for tabs
 
+
+        char letterFromChar = json["child"]["letter"];
+        int  letterAsInt    = json["child"]["letter"];
+
+        std::cout << "Letter as char: " << letterFromChar << std::endl;
+        std::cout << "Letter as int: " << letterAsInt << std::endl;
+
+        int num = json["num"];
+        char numAsChar = json["num"];
+
+        std::cout << "Num as int: " << num << std::endl;
+        std::cout << "Num as char: " << numAsChar << std::endl;
+
         // show-casing type mismatch error
-        int z = json["child"]["3dcoord"]["z"];
+        std::string z = json["child"]["3dcoord"]["z"];
 
     } catch (std::exception& e)
     {
@@ -163,6 +207,17 @@ int main()
         cereal::JsonObject parsedRoot = cereal::Parse(str);
 
         parsedRoot.PrintToFile("./parsed_output.json", true);
+
+        cereal::JsonObject ch  = parsedRoot["child"];
+        cereal::JsonObject ch2 = ch["2dcoord"];
+        cereal::JsonObject ch3 = ch["3dcoord"];
+
+
+        Vector2 deserialized2dCoord = Vector2(ch2);
+        Vector3 deserialized3dCoord = Vector3(ch3);
+
+        std::cout << "Deserialized 2D Coord: " << deserialized2dCoord << std::endl;
+        std::cout << "Deserialized 3D Coord: " << deserialized3dCoord << std::endl;
 
     } catch (std::exception& e)
     {

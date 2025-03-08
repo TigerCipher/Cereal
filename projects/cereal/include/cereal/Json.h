@@ -200,11 +200,34 @@ public:
             {
                 const std::string expectedType = GetTypeName<T>();
 
-                const std::string actualType =
-                    std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
+                 return std::visit(
+                    [&]<typename AT>(AT&& value) -> T {
+                        using ActualType = std::decay_t<AT>;
 
-                THROW_JSON_EXCEPTION("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
-                                     "' for key: " + mKey);
+                        if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<ActualType>)
+                        {
+                            // Convert to the expected type instead of throwing
+                            return static_cast<T>(value);
+                        } else if constexpr (std::is_integral_v<T> && std::is_same_v<ActualType, char>)
+                        {
+                            return static_cast<T>(value); // Convert char to ASCII int
+                        }
+                        else if constexpr (std::is_same_v<T, char> && std::is_integral_v<ActualType>)
+                        {
+                            if (value < 0 || value > 255)
+                                throw JsonException("Invalid conversion: Cannot convert number " + std::to_string(value) +
+                                                     " to char");
+                            return static_cast<char>(value);
+                        }
+                        else
+                        {
+                            // If conversion isn't possible, throw an exception
+                            const std::string actualType = GetTypeName<ActualType>();
+                            throw JsonException("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                                 "' for key: " + mKey);
+                        }
+                    },
+                    mValue);
             }
             return std::get<T>(mValue);
         }

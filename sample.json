@@ -16,6 +16,7 @@
         "letter": "b", 
         "bools": [true, false, true], 
         "tilemap": ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 
+        "num": 37, 
         "2dcoord": {
             "x": 1, 
             "y": 2
@@ -32,5 +33,6 @@
     }, 
     "letter": "b", 
     "bools": [true, false, true], 
-    "tilemap": ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+    "tilemap": ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 
+    "num": 37
 }
