@@ -23,6 +23,8 @@
 
 #include "JsonParser.h"
 
+#include "JsonException.h"
+
 #include <sstream>
 #include <cctype>
 #include <format>
@@ -74,14 +76,14 @@ JsonValue ParseValue()
         return ParseNumber();
     if (std::isalpha(ch))
         return ParseLiteral();
-    throw std::runtime_error(std::format("Unexpected character while parsing value: {}" , ch));
+    THROW_JSON_EXCEPTION(std::format("Unexpected character while parsing value: {}", ch));
 }
 
 std::string ParseString()
 {
     if (const char firstChar = _stream.get(); firstChar != '\"')
     {
-        throw std::runtime_error("Expected opening quote for string, got: " + std::string(1, firstChar));
+        THROW_JSON_EXCEPTION("Expected opening quote for string, got: " + std::string(1, firstChar));
     }
 
     std::string result;
@@ -97,7 +99,7 @@ std::string ParseString()
         if (ch == '\\')
         { // Handle escaped characters
             if (!_stream.get(ch))
-                throw std::runtime_error("Invalid escape sequence");
+                THROW_JSON_EXCEPTION("Invalid escape sequence");
             switch (ch)
             {
             case 'n': result += '\n'; break;
@@ -107,7 +109,7 @@ std::string ParseString()
             case 'f': result += '\f'; break;
             case '\\': result += '\\'; break;
             case '\"': result += '\"'; break;
-            default: throw std::runtime_error("Invalid escape sequence");
+            default: THROW_JSON_EXCEPTION("Invalid escape sequence");
             }
         } else
         {
@@ -115,7 +117,7 @@ std::string ParseString()
         }
     }
 
-    throw std::runtime_error("Unterminated string");
+    THROW_JSON_EXCEPTION("Unterminated string");
 }
 
 
@@ -145,13 +147,13 @@ JsonValue ParseLiteral()
         return false;
     if (literal == "null")
         return nullptr;
-    throw std::runtime_error("Invalid literal: " + literal);
+    THROW_JSON_EXCEPTION("Invalid literal: " + literal);
 }
 
 JsonObject ParseObject()
 {
     if (_stream.get() != '{')
-        throw std::runtime_error("Expected '{'");
+        THROW_JSON_EXCEPTION("Expected '{'");
 
     JsonObject obj;
     SkipWhitespace();
@@ -165,7 +167,7 @@ JsonObject ParseObject()
 
         SkipWhitespace();
         if (_stream.get() != ':')
-            throw std::runtime_error("Expected ':' after key");
+            THROW_JSON_EXCEPTION("Expected ':' after key");
 
         SkipWhitespace();
 
@@ -181,7 +183,7 @@ JsonObject ParseObject()
     }
 
     if (_stream.get() != '}')
-        throw std::runtime_error("Expected '}'");
+        THROW_JSON_EXCEPTION("Expected '}'");
     return obj;
 }
 
@@ -205,7 +207,7 @@ JsonValue ParseTypedArray(const JsonValue& firstElement)
         // Expect a comma before reading the next value
         if (_stream.get() != ',')
         {
-            throw std::runtime_error("Expected ',' between array elements");
+            THROW_JSON_EXCEPTION("Expected ',' between array elements");
         }
 
         SkipWhitespace();
@@ -216,7 +218,7 @@ JsonValue ParseTypedArray(const JsonValue& firstElement)
         // Ensure type consistency
         if (!std::holds_alternative<T>(nextValue))
         {
-            throw std::runtime_error("JSON array contains mixed types, which is not supported.");
+            THROW_JSON_EXCEPTION("JSON array contains mixed types, which is not supported.");
         }
 
         tempValues.push_back(std::get<T>(nextValue));
@@ -226,11 +228,10 @@ JsonValue ParseTypedArray(const JsonValue& firstElement)
 }
 
 
-
 JsonValue ParseArray()
 {
     if (_stream.get() != '[')
-        throw std::runtime_error("Expected '['");
+        THROW_JSON_EXCEPTION("Expected '['");
 
     SkipWhitespace();
 
@@ -266,7 +267,7 @@ JsonValue ParseArray()
             else if constexpr (std::is_same_v<T, JsonObject>)
                 return ParseTypedArray<JsonObject>(firstElement);
             else
-                throw std::runtime_error(std::format("Unsupported array type: {}", GetTypeName<T>()));
+                THROW_JSON_EXCEPTION(std::format("Unsupported array type: {}", GetTypeName<T>()));
         },
         firstValue);
 }

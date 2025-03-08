@@ -26,6 +26,12 @@
 
 #include <fstream>
 
+#ifdef _DEBUG
+    #if defined(_MSC_VER)
+        #pragma comment(lib, "dbghelp.lib")
+    #endif
+#endif
+
 namespace cereal
 {
 
@@ -40,7 +46,7 @@ void JsonObject::PrintToFile(const std::string_view filename, bool pretty, int i
 
     if (!fs.is_open())
     {
-        throw std::runtime_error("Failed to open file for writing");
+        THROW_JSON_EXCEPTION("Failed to open file for writing");
     }
 
     fs << ToString(pretty, 0, indentSize);

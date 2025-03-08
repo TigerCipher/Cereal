@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <array>
 
 
 struct TestObject : public cereal::Serializable

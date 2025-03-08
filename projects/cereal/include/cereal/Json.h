@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "JsonException.h"
 #include "Serializer.h"
 
 #include <unordered_map>
@@ -52,7 +53,6 @@
         #include <windows.h>
         #include <dbghelp.h>
 
-        #pragma comment(lib, "dbghelp.lib")
 
 inline std::string DemangleTypeName(const char* name)
 {
@@ -149,7 +149,7 @@ public:
         const auto it = mValues.find(key);
         if (it == mValues.end())
         {
-            throw std::runtime_error("Key not found in JsonObject: " + key);
+            THROW_JSON_EXCEPTION("Key not found in JsonObject: " + key);
         }
 
         if (!std::holds_alternative<T>(it->second))
@@ -159,8 +159,8 @@ public:
             const std::string actualType =
                 std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, it->second);
 
-            throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
-                                     "' for key: " + key);
+            THROW_JSON_EXCEPTION("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                 "' for key: " + key);
         }
 
         return std::get<T>(mValues.at(key));
@@ -203,8 +203,8 @@ public:
                 const std::string actualType =
                     std::visit([]<typename P>(const P&) -> std::string { return GetTypeName<std::decay_t<P>>(); }, mValue);
 
-                throw std::runtime_error("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
-                                         "' for key: " + mKey);
+                THROW_JSON_EXCEPTION("Type mismatch: Expected '" + expectedType + "', but found '" + actualType +
+                                     "' for key: " + mKey);
             }
             return std::get<T>(mValue);
         }
@@ -228,7 +228,7 @@ public:
         const auto it = mValues.find(key);
         if (it == mValues.end())
         {
-            throw std::runtime_error("Key not found in JsonObject: " + key);
+            THROW_JSON_EXCEPTION("Key not found in JsonObject: " + key);
         }
         return JsonProxy(const_cast<JsonValue&>(it->second), key);
     }

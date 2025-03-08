@@ -25,7 +25,6 @@
 
 #include <string>
 #include <vector>
-#include <array>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -100,22 +99,6 @@ std::string SerializeItem(const std::string_view key, const T& value)
     return "\"" + std::string(key) + "\": " + jsonValue;
 }
 
-template<typename T, size_t N>
-std::string SerializeArray(const std::array<T, N> arr)
-{
-    std::ostringstream oss;
-    oss << "[";
-    for (size_t i = 0; i < N; ++i)
-    {
-        oss << cereal::SerializeItem(arr[i]);
-        if (i != N - 1)
-        {
-            oss << ", ";
-        }
-    }
-    oss << "]";
-    return oss.str();
-}
 
 template<typename T>
 std::string SerializeVector(const std::vector<T>& vec)
