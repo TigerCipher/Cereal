@@ -1,0 +1,36 @@
+{
+    "fruit": "apple", 
+    "span": [1.5, 2.4, 3, 4.2, 5], 
+    "flag": true, 
+    "spannum": [1, 2, 3, 4, 5], 
+    "name": "John Doe", 
+    "null": null, 
+    "letter": "b", 
+    "child2": null, 
+    "child": {
+        "fruit": "orange", 
+        "span": [1.5, 2.4, 3, 4.2, 5], 
+        "flag": false, 
+        "spannum": [5, 4, 3, 2, 1], 
+        "name": "John Doe", 
+        "null": null, 
+        "letter": "b", 
+        "bools": [true, false, true], 
+        "tilemap": ["a", "b", "c", "d", "e", "f", "g", "h", "i"], 
+        "2dcoord": {
+            "x": 1, 
+            "y": 2
+        }, 
+        "3dcoord": {
+            "x": 1.76, 
+            "y": 2.74234324237709, 
+            "z": 3.76, 
+            "pos": {
+                "x": 3.4, 
+                "y": 7.459
+            }
+        }
+    }, 
+    "bools": [true, false, true], 
+    "tilemap": ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+}

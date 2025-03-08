@@ -103,12 +103,11 @@ std::string GetTypeName()
     TYPE_VARIANTS(macro, float),                             \
     TYPE_VARIANTS(macro, char),                              \
     TYPE_VARIANTS(macro, std::string),                       \
-    TYPE_VARIANTS(macro, JsonObject),                        \
-    TYPE_VARIANTS(macro, uint8_t)
+    TYPE_VARIANTS(macro, JsonObject)
 // clang-format on
 
 
-#define TYPES APPLY_MACRO(MAP_TYPE_HELPER), APPLY_MACRO(SPAN_TYPE_HELPER), APPLY_MACRO(GET_TYPE) // APPLY_MACRO(VEC_TYPE_HELPER)
+#define TYPES APPLY_MACRO(MAP_TYPE_HELPER), APPLY_MACRO(SPAN_TYPE_HELPER), APPLY_MACRO(GET_TYPE), APPLY_MACRO(VEC_TYPE_HELPER)
 
 #define VARIANT std::variant<TYPES, std::nullptr_t>
 

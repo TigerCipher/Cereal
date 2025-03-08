@@ -28,6 +28,12 @@
 #include <format>
 #include <iostream>
 
+#if 0
+    #define DEBUG_PRINT(x) std::cout << x << std::endl
+#else
+    #define DEBUG_PRINT(x) (void) 0
+#endif
+
 namespace cereal
 {
 
@@ -55,7 +61,9 @@ JsonValue ParseValue()
 {
     SkipWhitespace();
     const char ch = static_cast<char>(_stream.peek());
-    std::cout << "Parsing value starting with: " << ch << std::endl; // Debugging output
+
+    DEBUG_PRINT("Parsing value starting with: " << ch);
+
     if (ch == '\"')
         return ParseString();
     if (ch == '{')
@@ -71,8 +79,7 @@ JsonValue ParseValue()
 
 std::string ParseString()
 {
-    char firstChar = _stream.get(); // Get the first character
-    if (firstChar != '\"')
+    if (const char firstChar = _stream.get(); firstChar != '\"')
     {
         throw std::runtime_error("Expected opening quote for string, got: " + std::string(1, firstChar));
     }
@@ -82,7 +89,7 @@ std::string ParseString()
 
     while (_stream.get(ch))
     {
-        std::cout << "Reading char: " << ch << std::endl; // Debugging output
+        DEBUG_PRINT("Reading char: " << ch);
 
         if (ch == '\"')
             return result; // Closing quote found, return string
@@ -119,7 +126,9 @@ JsonValue ParseNumber()
     {
         num += static_cast<char>(_stream.get());
     }
-    std::cout << "Parsed number: " << num << std::endl; // Debugging output
+
+    DEBUG_PRINT("Parsed number: " << num);
+
     return std::stod(num);
 }
 
@@ -131,9 +140,9 @@ JsonValue ParseLiteral()
         literal += static_cast<char>(_stream.get());
     }
     if (literal == "true")
-        return (uint8_t)1;
+        return true;
     if (literal == "false")
-        return (uint8_t) 0;
+        return false;
     if (literal == "null")
         return nullptr;
     throw std::runtime_error("Invalid literal: " + literal);
@@ -151,7 +160,9 @@ JsonObject ParseObject()
     {
         SkipWhitespace();
         std::string key = ParseString();
-        std::cout << "Key: " << key << std::endl; // Debugging output
+
+        DEBUG_PRINT("Key: " << key);
+
         SkipWhitespace();
         if (_stream.get() != ':')
             throw std::runtime_error("Expected ':' after key");
@@ -211,50 +222,7 @@ JsonValue ParseTypedArray(const JsonValue& firstElement)
         tempValues.push_back(std::get<T>(nextValue));
     }
 
-    return std::span<T>(tempValues); // Convert vector to span
-}
-
-
-template<>
-JsonValue ParseTypedArray<bool>(const JsonValue& firstElement)
-{
-    std::vector<uint8_t> tempValues;
-    tempValues.push_back(std::get<uint8_t>(firstElement));
-
-    while (true)
-    {
-        SkipWhitespace();
-
-        // If next character is ']', break (end of array)
-        if (_stream.peek() == ']')
-        {
-            _stream.get(); // Consume ']'
-            break;
-        }
-
-        // Expect a comma before reading the next value
-        if (_stream.get() != ',')
-        {
-            throw std::runtime_error("Expected ',' between array elements");
-        }
-
-        SkipWhitespace();
-
-        // Parse the next value
-        JsonValue nextValue = ParseValue();
-
-        // Ensure type consistency
-        if (!std::holds_alternative<uint8_t>(nextValue))
-        {
-            throw std::runtime_error("JSON array contains mixed types, which is not supported.");
-        }
-
-        tempValues.push_back(std::get<uint8_t>(nextValue));
-    }
-
-    // Convert vector<bool> to vector<uint8_t> and return a span
-    // auto boolStorage = std::make_shared<std::vector<uint8_t>>(std::move(tempValues));
-    return std::span<uint8_t>(tempValues);
+    return tempValues;
 }
 
 

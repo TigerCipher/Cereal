@@ -160,7 +160,9 @@ int main()
         std::ifstream      file("./sample.json");
         std::string        str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         cereal::JsonObject parsedRoot = cereal::Parse(str);
-        std::cout << parsedRoot << std::endl; // bad allocation?
+
+        parsedRoot.PrintToFile("./parsed_output.json", true);
+
     } catch (std::exception& e)
     {
         std::cout << e.what() << std::endl;
