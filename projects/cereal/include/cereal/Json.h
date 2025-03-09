@@ -93,8 +93,8 @@ std::string GetTypeName()
 
 // clang-format off
 #define TYPE_VARIANTS(macro, T)                              \
-    APPLY_MACRO_TO_TYPE(macro, T),                           \
-    APPLY_MACRO_TO_TYPE(macro, std::shared_ptr<T>)           \
+    APPLY_MACRO_TO_TYPE(macro, T)                           
+    // APPLY_MACRO_TO_TYPE(macro, std::shared_ptr<T>)           
 
 #define APPLY_MACRO(macro)                                   \
     TYPE_VARIANTS(macro, int),                               \
@@ -172,12 +172,7 @@ public:
         return Get<std::span<T>>(key);
     }
 
-    [[nodiscard]] const std::shared_ptr<JsonObject>& GetObjectPtr(const std::string& key) const
-    {
-        return Get<std::shared_ptr<JsonObject>>(key);
-    }
-
-    [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return *GetObjectPtr(key); }
+    [[nodiscard]] const JsonObject& GetObject(const std::string& key) const { return Get<JsonObject>(key); }
 
 #pragma region Json Proxy
 
@@ -234,7 +229,7 @@ public:
 
         JsonProxy operator[](const std::string& key) const
         {
-            return JsonProxy(std::get<std::shared_ptr<JsonObject>>(mValue)->mValues[key], key);
+            return JsonProxy(std::get<JsonObject>(mValue).mValues[key], key);
         }
 
     private:
@@ -264,9 +259,9 @@ private:
 };
 
 template<>
-inline std::string Serialize<std::shared_ptr<JsonObject>>(const std::shared_ptr<JsonObject>& obj)
+inline std::string Serialize<JsonObject>(const JsonObject& obj)
 {
-    return obj->ToString();
+    return obj.ToString();
 }
 
 

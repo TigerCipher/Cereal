@@ -6,7 +6,9 @@
     "name": "John Doe", 
     "null": null, 
     "letter": "b", 
-    "child2": null, 
+    "child2": {
+
+    }, 
     "child": {
         "fruit": "orange", 
         "span": [1.5, 2.4, 3, 4.2, 5], 

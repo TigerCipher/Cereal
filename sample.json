@@ -5,7 +5,9 @@
     "flag": true, 
     "name": "John Doe", 
     "null": null, 
-    "child2": null, 
+    "child2": {
+
+    }, 
     "child": {
         "span": [1.5, 2.4, 3, 4.2, 5], 
         "fruit": "orange", 

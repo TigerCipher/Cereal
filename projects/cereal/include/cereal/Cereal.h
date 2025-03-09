@@ -39,7 +39,9 @@ public:
     Serializable& operator=(const Serializable& other)     = default;
     Serializable& operator=(Serializable&& other) noexcept = default;
 
-    [[nodiscard]] virtual std::shared_ptr<JsonObject> Serialize() = 0;
+    [[nodiscard]] virtual JsonObject Serialize() = 0;
+
+    virtual void Deserialize(const JsonObject& json) = 0;
 };
 
 } // namespace cereal
